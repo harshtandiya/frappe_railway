@@ -46,6 +46,7 @@ app_names() {
 }
 
 install_apps() {
+  if [ -z "$FRAPPE_APPS" ]; then return 0; fi
   local app installed
   installed=$(runuser -u frappe -- bench --site "$SITE_NAME" list-apps 2>/dev/null || true)
   for app in $(app_names); do
