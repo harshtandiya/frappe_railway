@@ -8,14 +8,19 @@ RUN apt-get update \
 USER frappe
 WORKDIR /home/frappe/frappe-bench
 # Optional comma-separated apps, each as <git-url>@<branch>. Empty installs vanilla Frappe only.
+# Repos already in apps/ (erpnext ships in the base image) reuse the pinned copy; get-app would prompt and abort.
+# frappe_apps.txt records real app dir names (repo name can differ) for install-app on boot.
 ARG FRAPPE_APPS=""
-RUN if [ -n "$FRAPPE_APPS" ]; then \
-      for app in $(echo "$FRAPPE_APPS" | tr ',' ' '); do \
-        url="${app%@*}"; branch="${app##*@}"; \
-        if [ "$branch" = "$url" ]; then branch="version-16"; fi; \
-        bench get-app --branch "$branch" "$url"; \
-      done; \
-    fi \
+RUN touch frappe_apps.txt \
+    && for app in $(echo "$FRAPPE_APPS" | tr ',' ' '); do \
+      url="${app%@*}"; branch="${app##*@}"; \
+      if [ "$branch" = "$url" ]; then branch="version-16"; fi; \
+      repo="$(basename "${url%.git}")"; \
+      if [ -d "apps/$repo" ]; then echo "$repo" >> frappe_apps.txt; continue; fi; \
+      ls -1 apps > /tmp/apps.before; \
+      bench get-app --skip-assets --branch "$branch" "$url" || exit 1; \
+      ls -1 apps | grep -vxFf /tmp/apps.before >> frappe_apps.txt || true; \
+    done \
     && bench build \
     && grep -Fq '"website.bundle.css"' sites/assets/assets.json \
     && rm -rf /home/frappe/frappe-bench/assets \

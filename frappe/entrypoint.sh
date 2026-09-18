@@ -8,7 +8,6 @@ set -euo pipefail
 
 SITE_NAME="${SITE_NAME:-frontend}"
 DB_PORT="${DB_PORT:-3306}"
-FRAPPE_APPS="${FRAPPE_APPS:-}"
 BENCH=/home/frappe/frappe-bench
 cd "$BENCH"
 
@@ -36,25 +35,6 @@ runuser -u frappe -- bench set-config -g redis_socketio "$REDIS_URL"
 runuser -u frappe -- bench set-config -gp socketio_port 9000
 runuser -u frappe -- bench set-config -g chromium_path /usr/bin/chromium-headless-shell
 
-# App names derived from the <git-url>@<branch> list baked into FRAPPE_APPS.
-app_names() {
-  for app in $(echo "$FRAPPE_APPS" | tr ',' ' '); do
-    name="${app%%@*}"
-    name="${name##*/}"
-    echo "${name%.git}"
-  done
-}
-
-install_apps() {
-  if [ -z "$FRAPPE_APPS" ]; then return 0; fi
-  local app installed
-  installed=$(runuser -u frappe -- bench --site "$SITE_NAME" list-apps 2>/dev/null || true)
-  for app in $(app_names); do
-    if echo "$installed" | grep -qx "$app"; then continue; fi
-    runuser -u frappe -- bench --site "$SITE_NAME" install-app "$app"
-  done
-}
-
 if [ ! -f "sites/$SITE_NAME/site_config.json" ]; then
   runuser -u frappe -- bench new-site "$SITE_NAME" \
     --mariadb-user-host-login-scope='%' \
@@ -65,7 +45,10 @@ if [ ! -f "sites/$SITE_NAME/site_config.json" ]; then
 else
   runuser -u frappe -- bench --site "$SITE_NAME" migrate
 fi
-install_apps
+# install-app skips apps already on the site, so this is safe on every boot.
+if [ -s frappe_apps.txt ]; then
+  runuser -u frappe -- bench --site "$SITE_NAME" install-app $(cat frappe_apps.txt)
+fi
 
 runuser -u frappe -- bench --site "$SITE_NAME" clear-cache
 runuser -u frappe -- bench --site "$SITE_NAME" clear-website-cache

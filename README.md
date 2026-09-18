@@ -20,7 +20,7 @@ Sites are created with Frappe only. To add applications, set the `FRAPPE_APPS` e
 FRAPPE_APPS=https://github.com/frappe/erpnext@version-16,https://github.com/frappe/hrms@version-16
 ```
 
-On boot the template installs any app from that list that is not already installed on the site, and runs `bench migrate` on every subsequent boot.
+On boot the template installs any app from that list that is not already installed on the site, and runs `bench migrate` on every subsequent boot. ERPNext ships in the base image, so listing it reuses the pinned `v16.34.1` copy instead of cloning the branch. Use public HTTPS URLs; the build has no Git credentials.
 
 > Railway config-as-code reads `FRAPPE_APPS` from the service's build variables. Changing it requires a rebuild, because application assets are compiled into the image.
 
