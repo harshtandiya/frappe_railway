@@ -2,6 +2,8 @@
 
 A Railway-compatible deployment of [Frappe Framework](https://github.com/frappe/frappe), pinned to the Frappe `v16` line via the `frappe/erpnext:v16.34.1` base image.
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/frappe-framework?referralCode=yvOvkY&utm_medium=integration&utm_source=button&utm_campaign=frappe-framework)
+
 Railway does not support sharing one volume across independent services. Frappe's production topology shares `sites` between backend, frontend, WebSocket, workers, and scheduler, so this template runs those application processes under Supervisor in one container while keeping MariaDB and Redis as separate private services.
 
 ## Services
