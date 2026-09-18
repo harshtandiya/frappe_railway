@@ -8,6 +8,8 @@ set -euo pipefail
 
 SITE_NAME="${SITE_NAME:-frontend}"
 DB_PORT="${DB_PORT:-3306}"
+# Single-site template: nginx defaults this to $host, which won't match the site on Railway's domain.
+export FRAPPE_SITE_NAME_HEADER="${FRAPPE_SITE_NAME_HEADER:-$SITE_NAME}"
 BENCH=/home/frappe/frappe-bench
 cd "$BENCH"
 
